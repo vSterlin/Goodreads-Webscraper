@@ -13,6 +13,7 @@ type book struct {
 	Title       string
 	Author      string
 	PublishDate string
+	Genre       string
 }
 
 func main() {
@@ -20,20 +21,27 @@ func main() {
 	books := []*book{}
 	c := colly.NewCollector(colly.Async(true))
 
-	c.OnHTML(".leftContainer > .elementList", func(e *colly.HTMLElement) {
-		// newUrl := e.Attr("href")
-		// e.Request.Visit(newUrl)
+	c.OnHTML("body", func(e *colly.HTMLElement) {
 
-		smallText := strings.Split(e.ChildText("span.greyText.smallText"), " ")
-		title := fmt.Sprintf("\"%s\"", e.ChildText(".bookTitle"))
+		genreText := e.ChildText("h1")
+		genre := strings.Split(genreText, " ")[0]
 
-		book := &book{
-			Title:       title,
-			Author:      e.ChildText("span[itemprop=name]"),
-			PublishDate: smallText[len(smallText)-1],
-		}
+		e.ForEach(".leftContainer > .elementList", func(i int, e *colly.HTMLElement) {
+			// newUrl := e.Attr("href")
+			// e.Request.Visit(newUrl)
 
-		books = append(books, book)
+			smallText := strings.Split(e.ChildText("span.greyText.smallText"), " ")
+			title := fmt.Sprintf("\"%s\"", e.ChildText(".bookTitle"))
+
+			book := &book{
+				Title:       title,
+				Author:      e.ChildText("span[itemprop=name]"),
+				PublishDate: smallText[len(smallText)-1],
+				Genre:       genre,
+			}
+
+			books = append(books, book)
+		})
 	})
 
 	c.OnRequest(func(r *colly.Request) {
@@ -53,9 +61,9 @@ func main() {
 	}
 	defer f.Close()
 
-	f.WriteString("Title, Author, Pages\n")
+	f.WriteString("Title, Author, Pages, Genre\n")
 	for _, b := range books {
-		s := fmt.Sprintf("%s, %s, %s\n", b.Title, b.Author, b.PublishDate)
+		s := fmt.Sprintf("%s, %s, %s, %s\n", b.Title, b.Author, b.PublishDate, b.Genre)
 		_, err = f.WriteString(s)
 		if err != nil {
 			fmt.Println(err)
