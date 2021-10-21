@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gocolly/colly/v2"
@@ -23,9 +24,10 @@ func main() {
 		// e.Request.Visit(newUrl)
 
 		smallText := strings.Split(e.ChildText("span.greyText.smallText"), " ")
+		title := fmt.Sprintf("\"%s\"", e.ChildText(".bookTitle"))
 
 		book := &book{
-			Title:       e.ChildText(".bookTitle"),
+			Title:       title,
 			Author:      e.ChildText("span[itemprop=name]"),
 			PublishDate: smallText[len(smallText)-1],
 		}
@@ -41,8 +43,19 @@ func main() {
 
 	c.Wait()
 
+	f, err := os.OpenFile("books.csv", os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
+
+	f.WriteString("Title, Author, Pages\n")
 	for _, b := range books {
-		fmt.Printf("%+v\n", b)
+		s := fmt.Sprintf("%s, %s, %s\n", b.Title, b.Author, b.PublishDate)
+		_, err = f.WriteString(s)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 }
