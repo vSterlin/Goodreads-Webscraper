@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gocolly/colly/v2"
@@ -17,7 +18,7 @@ type book struct {
 func main() {
 
 	books := []*book{}
-	c := colly.NewCollector()
+	c := colly.NewCollector(colly.Async(true))
 
 	c.OnHTML(".leftContainer > .elementList", func(e *colly.HTMLElement) {
 		// newUrl := e.Attr("href")
@@ -39,7 +40,10 @@ func main() {
 		fmt.Println("Visiting " + r.URL.String())
 	})
 
-	c.Visit("https://www.goodreads.com/shelf/show/fantasy?page=1")
+	for i := 1; i <= 25; i++ {
+		page := strconv.Itoa(i)
+		c.Visit("https://www.goodreads.com/shelf/show/fantasy?page=" + page)
+	}
 
 	c.Wait()
 
